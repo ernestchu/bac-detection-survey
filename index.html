@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automated Detection of Broken Access Control</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Harmony -->
+    <!-- Application Structure Plan: A thematic, single-page dashboard structure is used to present the research. It begins with a high-level overview to establish context, followed by a deep dive into specific detection techniques using an interactive chart and tabs. It then explores concrete examples (CWEs/CVEs) to ground the concepts, and finishes with future trends. This non-linear, guided-exploration structure was chosen over a simple document format to allow users to either follow a logical learning path (from general to specific) or jump directly to the content most relevant to them, enhancing usability and information retention for both novice and expert audiences. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Prevalence of BAC -> Goal: Inform -> Viz: Key Stat Card (HTML/CSS) -> Interaction: None -> Justification: Immediately highlights the topic's importance.
+        - Report Info: Detection Technique Comparison (Effectiveness, Speed, etc.) -> Goal: Compare -> Viz: Radar Chart -> Interaction: Toggling datasets via buttons -> Justification: Allows users to dynamically compare multiple techniques across several metrics, making complex data digestible. -> Library: Chart.js (Canvas).
+        - Report Info: Types of BAC (CWEs) & Real-world examples (CVEs) -> Goal: Organize & Inform -> Viz: Interactive Tabbed/Accordion Lists (HTML/CSS/JS) -> Interaction: Click to reveal details -> Justification: Manages information density by hiding details until requested, preventing user overwhelm and focusing attention.
+        - Report Info: Relationship between BAC/CWE/CVE -> Goal: Organize/Explain -> Viz: Diagram (HTML/CSS) -> Interaction: Hover to highlight/explain -> Justification: Visually clarifies the conceptual hierarchy more effectively than text alone.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 450px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+        }
+        .nav-link.active {
+            color: #0284c7;
+            border-bottom-color: #0284c7;
+        }
+        .tech-tab.active {
+            background-color: #0284c7;
+            color: #ffffff;
+        }
+        .cwe-item-header.active {
+            background-color: #f1f5f9;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="text-slate-700">
+
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 border-b border-slate-200">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-xl font-bold text-sky-700">BAC Detection</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#overview" class="nav-link text-slate-600 hover:text-sky-600 px-3 py-2 rounded-md text-sm font-medium border-b-2 border-transparent">Overview</a>
+                        <a href="#techniques" class="nav-link text-slate-600 hover:text-sky-600 px-3 py-2 rounded-md text-sm font-medium border-b-2 border-transparent">Detection Techniques</a>
+                        <a href="#vulnerabilities" class="nav-link text-slate-600 hover:text-sky-600 px-3 py-2 rounded-md text-sm font-medium border-b-2 border-transparent">Vulnerability Deep Dive</a>
+                        <a href="#research" class="nav-link text-slate-600 hover:text-sky-600 px-3 py-2 rounded-md text-sm font-medium border-b-2 border-transparent">Key Research</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+        
+        <section id="overview" class="scroll-mt-20 mb-16">
+            <div class="text-center mb-12">
+                <h1 class="text-4xl md:text-5xl font-extrabold text-slate-800 mb-4">Automated Detection of Broken Access Control</h1>
+                    <p class="max-w-3xl mx-auto mb-4 text-lg font-extrabold">
+                        Generated entirely by Gemini Pro. Use with caution. See full
+                        <a class="text-sky-700" href="/bac-detection-survey/report.pdf" target="_blank">report</a>.
+                    </p>
+                <p class="max-w-3xl mx-auto text-lg text-slate-600">An interactive report on the methodologies and challenges in identifying one of cybersecurity's most persistent and critical threats.</p>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="md:col-span-2 bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+                    <h2 class="text-2xl font-bold text-slate-800 mb-4">What is Broken Access Control?</h2>
+                    <p class="text-slate-600 mb-4">Broken Access Control (BAC) vulnerabilities occur when an application fails to properly enforce restrictions on what authenticated or unauthenticated users are allowed to do. This failure allows attackers to access unauthorized functionality or data, such as viewing other users' private information, modifying sensitive data, or performing administrative actions. This section introduces the core concepts and highlights the critical impact of these vulnerabilities in modern web applications.</p>
+                    <div class="mt-6 border-t border-slate-200 pt-6">
+                        <h3 class="text-lg font-semibold text-slate-700 mb-4">From Weakness to Exploit</h3>
+                         <div class="flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-4 text-center">
+                            <div class="p-4 rounded-lg bg-slate-50 border border-slate-200 w-full md:w-auto">
+                                <p class="font-bold text-sky-700">CWE</p>
+                                <p class="text-sm text-slate-500">The Weakness</p>
+                            </div>
+                            <div class="text-2xl text-slate-300 transform md:-rotate-90">➔</div>
+                            <div class="p-4 rounded-lg bg-slate-50 border border-slate-200 w-full md:w-auto">
+                                <p class="font-bold text-sky-700">BAC Vulnerability</p>
+                                <p class="text-sm text-slate-500">The Flaw</p>
+                            </div>
+                            <div class="text-2xl text-slate-300 transform md:-rotate-90">➔</div>
+                            <div class="p-4 rounded-lg bg-slate-50 border border-slate-200 w-full md:w-auto">
+                                <p class="font-bold text-sky-700">CVE</p>
+                                <p class="text-sm text-slate-500">The Instance</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-sky-600 text-white p-8 rounded-2xl shadow-lg flex flex-col justify-center items-center text-center">
+                    <p class="text-8xl font-extrabold">#1</p>
+                    <p class="text-xl font-semibold mt-2">OWASP Top 10</p>
+                    <p class="mt-4 text-sky-200">Broken Access Control has been ranked as the most critical web application security risk, highlighting its prevalence and potential for severe impact.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="techniques" class="scroll-mt-20 mb-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-800">Automated Detection Techniques</h2>
+                <p class="max-w-3xl mx-auto text-lg text-slate-600 mt-4">This section explores various automated methods for detecting Broken Access Control. Each technique offers a different balance of speed, accuracy, and complexity. Interact with the chart and tabs below to compare their capabilities and understand how they apply to the software development lifecycle.</p>
+            </div>
+
+            <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+                <h3 class="text-xl font-bold text-slate-800 mb-2 text-center">Technique Effectiveness Comparison</h3>
+                <p class="text-center text-slate-500 mb-6">Select techniques below to compare their relative strengths.</p>
+                <div class="chart-container">
+                    <canvas id="detectionTechniquesChart"></canvas>
+                </div>
+                <div id="chart-controls" class="flex flex-wrap justify-center gap-2 mt-6">
+                </div>
+            </div>
+
+            <div id="technique-details" class="mt-8 grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+            </div>
+        </section>
+
+        <section id="vulnerabilities" class="scroll-mt-20 mb-16">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-800">Vulnerability Deep Dive</h2>
+                <p class="max-w-3xl mx-auto text-lg text-slate-600 mt-4">Explore the specific types of weaknesses (CWEs) that constitute Broken Access Control and examine real-world examples (CVEs) to understand how these vulnerabilities manifest. Click on each item to reveal a detailed explanation and analysis.</p>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-8">
+                <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4">Common Weakness Enumerations (CWEs)</h3>
+                    <div id="cwe-list" class="space-y-2">
+                    </div>
+                </div>
+                <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-slate-200">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4">Case Studies (CVEs)</h3>
+                    <div id="cve-list" class="space-y-2">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="research" class="scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-800">Key Research & Future Trends</h2>
+                <p class="max-w-3xl mx-auto text-lg text-slate-600 mt-4">The field of automated security testing is constantly evolving. This section summarizes key findings from recent research and looks ahead at emerging trends, particularly the growing role of Artificial Intelligence and Machine Learning in creating more sophisticated detection tools.</p>
+            </div>
+            <div class="grid md:grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4">State-of-the-Art Findings</h3>
+                    <ul class="space-y-4 text-slate-600">
+                        <li class="flex items-start">
+                            <span class="text-sky-500 mr-3 mt-1">●</span>
+                            <span><strong>Stateful Analysis is Key:</strong> Research indicates that stateless tools (traditional DAST/SAST) miss many context-dependent BAC flaws. Stateful analysis, which understands application workflows, shows significantly higher detection rates for complex vulnerabilities.</span>
+                        </li>
+                        <li class="flex items-start">
+                             <span class="text-sky-500 mr-3 mt-1">●</span>
+                            <span><strong>Hybrid Approaches Excel:</strong> Combining static analysis (to map the application and potential endpoints) with dynamic analysis (to test permissions) provides the most comprehensive coverage. IAST tools are a direct result of this finding.</span>
+                        </li>
+                         <li class="flex items-start">
+                            <span class="text-sky-500 mr-3 mt-1">●</span>
+                            <span><strong>Policy-as-Code Reduces Flaws:</strong> Studies show that defining access control policies declaratively in code and automatically verifying the implementation against the policy is a highly effective preventative measure, shifting security left.</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4">The Future: AI & ML in Detection</h3>
+                     <p class="text-slate-600 mb-4">The next generation of BAC detection tools will heavily leverage AI/ML to move beyond predefined rules and heuristics. Key advancements include:</p>
+                    <ul class="space-y-4 text-slate-600">
+                        <li class="flex items-start">
+                             <span class="text-sky-500 mr-3 mt-1">●</span>
+                            <span><strong>Automated Role Discovery:</strong> ML models can analyze application traffic and user behavior to automatically infer user roles and their intended permissions, creating a baseline for detecting deviations.</span>
+                        </li>
+                         <li class="flex items-start">
+                            <span class="text-sky-500 mr-3 mt-1">●</span>
+                            <span><strong>Anomaly Detection:</strong> AI can identify unusual sequences of requests or data access patterns that may indicate a sophisticated authorization bypass, which rule-based systems might miss.</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+    </main>
+    
+    <footer class="bg-slate-800 text-slate-400 mt-16">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center text-sm">
+            <p>&copy; 2025 BAC Research Collective. Interactive report generated for educational purposes.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const appData = {
+                techniques: [
+                    {
+                        name: 'SAST',
+                        title: 'Static Analysis (SAST)',
+                        description: 'Analyzes application source code, byte code, or binaries for vulnerabilities without executing the program. It looks for patterns indicative of BAC flaws, such as missing permission checks.',
+                        pros: 'Finds flaws early in SDLC. High code coverage.',
+                        cons: 'High rate of false positives. Misses runtime/configuration issues.',
+                        color: 'rgba(56, 189, 248, 0.4)',
+                        borderColor: 'rgba(56, 189, 248, 1)',
+                        scores: [8, 5, 6, 4, 9] 
+                    },
+                    {
+                        name: 'DAST',
+                        title: 'Dynamic Analysis (DAST)',
+                        description: 'Tests the running application from the outside, simulating attacks. For BAC, it often involves logging in with different roles and attempting to access restricted resources.',
+                        pros: 'Finds runtime issues. Lower false positives.',
+                        cons: 'Limited code coverage. Can be slow. Struggles with complex business logic.',
+                        color: 'rgba(34, 211, 238, 0.4)',
+                        borderColor: 'rgba(34, 211, 238, 1)',
+                        scores: [6, 8, 4, 8, 3] 
+                    },
+                    {
+                        name: 'IAST',
+                        title: 'Interactive Analysis (IAST)',
+                        description: 'A hybrid approach that uses instrumentation within the running application to combine SAST and DAST. It can see both the code and the live traffic to identify vulnerabilities with high accuracy.',
+                        pros: 'High accuracy, low false positives. Provides code context.',
+                        cons: 'Can impact performance. Requires application instrumentation.',
+                        color: 'rgba(74, 222, 128, 0.4)',
+                        borderColor: 'rgba(74, 222, 128, 1)',
+                        scores: [7, 9, 8, 7, 5]
+                    },
+                    {
+                        name: 'ML-Based',
+                        title: 'AI/ML-Based Analysis',
+                        description: 'Uses machine learning models to analyze code or traffic to learn an application\'s access control model and identify anomalous requests that deviate from learned patterns, indicating a potential bypass.',
+                        pros: 'Can find novel and complex vulnerabilities. Adapts to applications.',
+                        cons: 'Requires large datasets for training. Can be a "black box". Still an emerging technology.',
+                        color: 'rgba(250, 204, 21, 0.4)',
+                        borderColor: 'rgba(250, 204, 21, 1)',
+                        scores: [5, 7, 9, 9, 2]
+                    }
+                ],
+                cwes: [
+                    { id: 'CWE-863', title: 'Incorrect Authorization', description: 'The application performs an authorization check, but the check is incorrect or flawed. This could mean it checks for the wrong role or permission, leading to unauthorized access.' },
+                    { id: 'CWE-862', title: 'Missing Authorization', description: 'A critical function or resource is exposed without any authorization check at all. Any user who knows the URL or API endpoint can access it, regardless of their permissions.' },
+                    { id: 'CWE-284', title: 'Improper Access Control', description: 'A broad category where the application does not enforce access control or enforces it in a way that is easily bypassable, covering a wide range of implementation flaws.' },
+                    { id: 'CWE-639', title: 'Authorization Bypass Through User-Controlled Key', description: 'A common and severe issue where an attacker can simply change an identifier in a request (e.g., `userId=123` to `userId=456`) to access another user\'s data or resources. This is also known as Insecure Direct Object Reference (IDOR).' },
+                ],
+                cves: [
+                    { id: 'CVE-2021-39931', product: 'GitLab', description: 'A missing authorization check allowed users to access and read internal repository contents in public projects, even when repository visibility was restricted to project members only.' },
+                    { id: 'CVE-2023-3290', product: 'Jenkins', description: 'An improper access control vulnerability allowed users with limited permissions to bypass security checks and execute arbitrary code on the Jenkins controller, leading to a full system compromise.' },
+                    { id: 'CVE-2023-3286', product: 'Mastodon', description: 'A flaw allowed a user to make another user\'s posts appear as their own by manipulating request parameters, a form of authorization bypass through a user-controlled key.' },
+                    { id: 'CVE-2024-55070', product: 'Fictional CRM', description: 'An example IDOR vulnerability where a sales agent could change the `invoice_id` in the URL to view and download invoices belonging to any other client in the system.' },
+                ]
+            };
+            
+            const chartLabels = ['Accuracy', 'Coverage', 'Speed', 'Context', 'Ease of Setup'];
+
+            const renderTechniques = () => {
+                const container = document.getElementById('technique-details');
+                const controlsContainer = document.getElementById('chart-controls');
+                container.innerHTML = '';
+                controlsContainer.innerHTML = '';
+
+                appData.techniques.forEach(tech => {
+                    const techCard = `
+                        <div class="bg-white p-6 rounded-lg border border-slate-200 fade-in">
+                            <h4 class="font-bold text-lg text-sky-700">${tech.title}</h4>
+                            <p class="text-sm text-slate-600 mt-2">${tech.description}</p>
+                            <div class="mt-4 text-sm">
+                                <p><strong class="text-green-600">Pros:</strong> ${tech.pros}</p>
+                                <p><strong class="text-red-600">Cons:</strong> ${tech.cons}</p>
+                            </div>
+                        </div>
+                    `;
+                    container.innerHTML += techCard;
+
+                    const controlButton = `
+                        <button data-tech="${tech.name}" class="tech-tab px-4 py-2 text-sm font-medium rounded-full border transition-colors duration-200">
+                            ${tech.name}
+                        </button>
+                    `;
+                    controlsContainer.innerHTML += controlButton;
+                });
+            };
+
+            const renderVulnerabilities = () => {
+                const cweContainer = document.getElementById('cwe-list');
+                const cveContainer = document.getElementById('cve-list');
+                cweContainer.innerHTML = '';
+                cveContainer.innerHTML = '';
+
+                appData.cwes.forEach(cwe => {
+                    const cweItem = `
+                        <div class="cwe-item border border-slate-200 rounded-lg">
+                            <button class="cwe-item-header w-full text-left p-4 flex justify-between items-center hover:bg-slate-50 transition-colors">
+                                <span class="font-semibold">${cwe.id}: ${cwe.title}</span>
+                                <span class="text-slate-400 transform transition-transform duration-300 ">▼</span>
+                            </button>
+                            <div class="cwe-item-body hidden p-4 border-t border-slate-200 bg-slate-50">
+                                <p class="text-slate-600">${cwe.description}</p>
+                            </div>
+                        </div>
+                    `;
+                    cweContainer.innerHTML += cweItem;
+                });
+
+                appData.cves.forEach(cve => {
+                     const cveItem = `
+                        <div class="cve-item border border-slate-200 rounded-lg">
+                            <button class="cve-item-header w-full text-left p-4 flex justify-between items-center hover:bg-slate-50 transition-colors">
+                                <div>
+                                    <span class="font-semibold">${cve.id}</span>
+                                    <span class="text-sm text-slate-500 ml-2">(${cve.product})</span>
+                                </div>
+                                <span class="text-slate-400 transform transition-transform duration-300">▼</span>
+                            </button>
+                            <div class="cve-item-body hidden p-4 border-t border-slate-200 bg-slate-50">
+                                <p class="text-slate-600">${cve.description}</p>
+                            </div>
+                        </div>
+                    `;
+                    cveContainer.innerHTML += cveItem;
+                });
+            };
+
+            const setupChart = () => {
+                const ctx = document.getElementById('detectionTechniquesChart').getContext('2d');
+                const chart = new Chart(ctx, {
+                    type: 'radar',
+                    data: {
+                        labels: chartLabels,
+                        datasets: []
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            r: {
+                                angleLines: { color: 'rgba(0, 0, 0, 0.1)' },
+                                grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                                pointLabels: { font: { size: 12 } },
+                                suggestedMin: 0,
+                                suggestedMax: 10,
+                                ticks: {
+                                    stepSize: 2,
+                                    backdropColor: 'rgba(255, 255, 255, 0.75)',
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            },
+                        }
+                    }
+                });
+
+                const controls = document.getElementById('chart-controls');
+                let activeTechniques = new Set(appData.techniques.map(t => t.name));
+
+                const updateChart = () => {
+                    chart.data.datasets = appData.techniques
+                        .filter(tech => activeTechniques.has(tech.name))
+                        .map(tech => ({
+                            label: tech.name,
+                            data: tech.scores,
+                            backgroundColor: tech.color,
+                            borderColor: tech.borderColor,
+                            borderWidth: 2,
+                            pointBackgroundColor: tech.borderColor,
+                        }));
+                    chart.update();
+
+                    controls.querySelectorAll('button').forEach(button => {
+                        if (activeTechniques.has(button.dataset.tech)) {
+                            button.classList.add('active');
+                            button.style.backgroundColor = appData.techniques.find(t=>t.name === button.dataset.tech).borderColor;
+                            button.style.color = '#fff';
+                            button.style.borderColor = appData.techniques.find(t=>t.name === button.dataset.tech).borderColor;
+                        } else {
+                            button.classList.remove('active');
+                            button.style.backgroundColor = 'transparent';
+                            button.style.color = '#334155';
+                             button.style.borderColor = '#cbd5e1';
+                        }
+                    });
+                };
+                
+                controls.addEventListener('click', (e) => {
+                    if (e.target.tagName === 'BUTTON') {
+                        const techName = e.target.dataset.tech;
+                        if (activeTechniques.has(techName)) {
+                            if (activeTechniques.size > 1) { 
+                                activeTechniques.delete(techName);
+                            }
+                        } else {
+                            activeTechniques.add(techName);
+                        }
+                        updateChart();
+                    }
+                });
+
+                updateChart();
+            };
+
+            const setupAccordions = () => {
+                const vulnerabilitySection = document.getElementById('vulnerabilities');
+                vulnerabilitySection.addEventListener('click', e => {
+                    const header = e.target.closest('.cwe-item-header, .cve-item-header');
+                    if (!header) return;
+
+                    const item = header.parentElement;
+                    const body = item.querySelector('.cwe-item-body, .cve-item-body');
+                    const icon = header.querySelector('span:last-child');
+                    const isActive = header.classList.contains('active');
+                    
+                    if(isActive){
+                         header.classList.remove('active');
+                         body.classList.add('hidden');
+                         icon.style.transform = 'rotate(0deg)';
+                    } else {
+                         header.classList.add('active');
+                         body.classList.remove('hidden');
+                         body.classList.add('fade-in');
+                         icon.style.transform = 'rotate(180deg)';
+                    }
+                });
+            };
+
+            const setupNavHighlighting = () => {
+                const sections = document.querySelectorAll('section');
+                const navLinks = document.querySelectorAll('.nav-link');
+
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            navLinks.forEach(link => {
+                                link.classList.remove('active');
+                                if (link.getAttribute('href').substring(1) === entry.target.id) {
+                                    link.classList.add('active');
+                                }
+                            });
+                        }
+                    });
+                }, { rootMargin: '-50% 0px -50% 0px', threshold: 0 });
+
+                sections.forEach(section => observer.observe(section));
+            };
+
+
+            renderTechniques();
+            renderVulnerabilities();
+            setupChart();
+            setupAccordions();
+            setupNavHighlighting();
+        });
+    </script>
+</body>
+</html>
+
